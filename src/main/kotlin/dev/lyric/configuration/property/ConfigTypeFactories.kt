@@ -17,10 +17,8 @@ fun <T : Any> setConfigType(elementClass: KClass<T>): ConfigType<Set<T>> = SetCo
 fun <T : Any> setConfigType(elementType: ConfigType<T>): ConfigType<Set<T>> = SetConfigType(elementType)
 
 // Map Config Type
-inline fun <reified V : Any> mapConfigType(): ConfigType<Map<String, V>> = MapConfigType(String::class, V::class)
 fun <V : Any> mapConfigType(valueClass: KClass<V>): ConfigType<Map<String, V>> = MapConfigType(valueClass)
 fun <V : Any> mapConfigType(valueType: ConfigType<V>): ConfigType<Map<String, V>> = MapConfigType(valueType)
 
-inline fun <reified K : Any, reified V : Any> mapConfigType(): ConfigType<Map<K, V>> = MapConfigType(K::class, V::class)
 fun <K : Any, V : Any> mapConfigType(keyClass: KClass<K>, valueClass: KClass<V>): ConfigType<Map<K, V>> = MapConfigType(keyClass, valueClass)
 fun <K : Any, V : Any> mapConfigType(keyType: ConfigType<K>, valueType: ConfigType<V>): ConfigType<Map<K, V>> = MapConfigType(keyType, valueType)

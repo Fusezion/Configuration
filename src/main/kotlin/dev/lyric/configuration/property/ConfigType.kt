@@ -53,14 +53,8 @@ data class MapConfigType<K : Any, V : Any>(
 		operator fun <V : Any> invoke(valueClass: ConfigType<V>): MapConfigType<String, V> =
 			MapConfigType(SimpleConfigType(String::class), valueClass)
 
-		inline operator fun <reified V : Any> invoke(): MapConfigType<String, V> =
-			MapConfigType(SimpleConfigType(String::class), SimpleConfigType(V::class))
-
 		operator fun <K : Any, V : Any> invoke(keyClass: KClass<K>, valueClass: KClass<V>): MapConfigType<K, V> =
 			MapConfigType(SimpleConfigType(keyClass), SimpleConfigType(valueClass))
-
-		inline operator fun <reified K : Any, reified V : Any> invoke(): MapConfigType<K, V> =
-			MapConfigType(SimpleConfigType(K::class), SimpleConfigType(V::class))
 
 	}
 
