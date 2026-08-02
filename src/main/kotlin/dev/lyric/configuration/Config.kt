@@ -10,6 +10,8 @@ import kotlin.properties.ReadWriteProperty
 
 abstract class Config(protected val storage: ConfigStorage) {
 
+	internal fun backingStorage(): ConfigStorage = storage
+
 	fun <T : Any> require(
 		path: String,
 		configType: ConfigType<T>,

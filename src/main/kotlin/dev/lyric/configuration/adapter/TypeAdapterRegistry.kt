@@ -2,6 +2,8 @@
 
 package dev.lyric.configuration.adapter
 
+import dev.lyric.configuration.Config
+import dev.lyric.configuration.ConfigStorage
 import dev.lyric.configuration.property.ConfigType
 import dev.lyric.configuration.property.ListConfigType
 import dev.lyric.configuration.property.MapConfigType
@@ -74,7 +76,21 @@ object TypeAdapterRegistry {
 		klass.java.isEnum -> EnumAdapter(klass) as TypeAdapter<T>
 		ConfigurationSerializable::class.java.isAssignableFrom(klass.java) ->
 			BukkitAdapter(klass as KClass<out ConfigurationSerializable>) as TypeAdapter<T>
+		Config::class.java.isAssignableFrom(klass.java) ->
+			ConfigAdapter(configFactory(klass as KClass<out Config>)) as TypeAdapter<T>
 		else -> SerializerAdapter.findCompanionSerializer(klass)?.let { SerializerAdapter(it) }
+	}
+
+	private fun <T : Config> configFactory(klass: KClass<T>): (ConfigStorage) -> T {
+		val constructor = try {
+			klass.java.getDeclaredConstructor(ConfigStorage::class.java).apply { isAccessible = true }
+		} catch (e: NoSuchMethodException) {
+			error(
+				"${klass.simpleName} has no (ConfigStorage) constructor, so it can't be built automatically. " +
+						"Register a TypeAdapterRegistry.register(${klass.simpleName}::class, ConfigAdapter { storage -> ... }) instead."
+			)
+		}
+		return { storage -> constructor.newInstance(storage) }
 	}
 
 	private fun missingAdapterMessage(klass: KClass<*>) =

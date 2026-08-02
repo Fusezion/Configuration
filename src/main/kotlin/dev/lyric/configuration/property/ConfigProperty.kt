@@ -15,6 +15,29 @@ sealed class ConfigProperty<T : Any>(
 ) {
 	protected val adapter by lazy { TypeAdapterRegistry.resolve(configType) }
 
+	// Sentinel distinguishing "nothing cached yet" from a legitimately cached null (nullable properties).
+	private object Empty
+
+	private var cache: Any? = Empty
+
+	@Suppress("UNCHECKED_CAST")
+	protected fun <R> cached(compute: () -> R): R {
+		val current = cache
+		if (current !== Empty) return current as R
+		val value = compute()
+		cache = value
+		return value
+	}
+
+	protected fun updateCache(value: Any?) {
+		cache = value
+	}
+
+	/** Forces the next read to go back to storage instead of returning the cached value. */
+	fun invalidate() {
+		cache = Empty
+	}
+
 	protected fun deserializeOrThroe(raw: Any): T = try {
 		adapter.deserialize(raw)
 	} catch (e: Exception) {
@@ -36,13 +59,14 @@ class RequiredConfigProperty<T : Any>(
 	private val exceptionMessage: () -> String
 ) : ConfigProperty<T>(storage, path, configType), ReadWriteProperty<Config, T> {
 
-	override fun getValue(thisRef: Config, property: KProperty<*>): T {
+	override fun getValue(thisRef: Config, property: KProperty<*>): T = cached {
 		val raw = storage.get(path) ?: throw ConfigException(exceptionMessage())
-		return deserializeOrThroe(raw)
+		deserializeOrThroe(raw)
 	}
 
 	override fun setValue(thisRef: Config, property: KProperty<*>, value: T) {
 		storage.set(path, serializeOrThrow(value))
+		updateCache(value)
 	}
 }
 
@@ -52,13 +76,14 @@ class NullableConfigProperty<T : Any>(
 	configType: ConfigType<T>
 ) : ConfigProperty<T>(storage, path, configType), ReadWriteProperty<Config, T?> {
 
-	override fun getValue(thisRef: Config, property: KProperty<*>): T? {
-		val raw = storage.get(path) ?: return null
-		return deserializeOrThroe(raw)
+	override fun getValue(thisRef: Config, property: KProperty<*>): T? = cached {
+		val raw = storage.get(path) ?: return@cached null
+		deserializeOrThroe(raw)
 	}
 
 	override fun setValue(thisRef: Config, property: KProperty<*>, value: T?) {
 		storage.set(path, value?.let { serializeOrThrow(it) })
+		updateCache(value)
 	}
 }
 
@@ -69,13 +94,14 @@ class DefaultConfigProperty<T : Any>(
 	val default: T
 ) : ConfigProperty<T>(storage, path, configType), ReadWriteProperty<Config, T> {
 
-	override fun getValue(thisRef: Config, property: KProperty<*>): T {
-		val raw = storage.get(path) ?: return default
-		return deserializeOrThroe(raw)
+	override fun getValue(thisRef: Config, property: KProperty<*>): T = cached {
+		val raw = storage.get(path) ?: return@cached default
+		deserializeOrThroe(raw)
 	}
 
 	override fun setValue(thisRef: Config, property: KProperty<*>, value: T) {
 		storage.set(path, serializeOrThrow(value))
+		updateCache(value)
 	}
 }
 

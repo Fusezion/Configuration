@@ -21,6 +21,9 @@ class ConfigStorage internal constructor(
 
 	fun raw(): ConfigurationSection = section
 
+	internal fun snapshotSection(): ConfigurationSection =
+		if (pathPrefix.isEmpty()) section else section.getConfigurationSection(pathPrefix) ?: section.createSection(pathPrefix)
+
 	companion object {
 		fun memory(): ConfigStorage = ConfigStorage(MemoryConfiguration())
 	}
