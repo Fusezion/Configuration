@@ -15,7 +15,7 @@ sealed class ConfigProperty<T : Any>(
 ) {
 	protected val adapter by lazy { TypeAdapterRegistry.resolve(configType) }
 
-	// Sentinel distinguishing "nothing cached yet" from a legitimately cached null (nullable properties).
+	// Sentinel distinguishing "nothing cached yet" from a legitimately cached null (optional properties).
 	private object Empty
 
 	private var cache: Any? = Empty
@@ -70,7 +70,7 @@ class RequiredConfigProperty<T : Any>(
 	}
 }
 
-class NullableConfigProperty<T : Any>(
+class OptionalConfigProperty<T : Any>(
 	storage: ConfigStorage,
 	path: String,
 	configType: ConfigType<T>
